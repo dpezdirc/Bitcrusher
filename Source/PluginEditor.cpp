@@ -9,13 +9,24 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+const int MARGIN_WIDTH = 20;
+
 //==============================================================================
 BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor (BitcrusherAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
-    // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
-    setSize (400, 300);
+    setSize (300, 200);
+
+    //m_bitMaskLabel.setText("Bit Mask:", juce::dontSendNotification);
+    //addAndMakeVisible(m_bitMaskLabel);
+
+    for (int iBtn = 0; iBtn < N_BITS; iBtn++)
+    {
+        m_buttons[iBtn].setButtonText(juce::String(iBtn));
+        m_buttons[iBtn].setClickingTogglesState(true);
+        addAndMakeVisible(m_buttons[iBtn]);
+    }
+    
 }
 
 BitcrusherAudioProcessorEditor::~BitcrusherAudioProcessorEditor()
@@ -25,16 +36,19 @@ BitcrusherAudioProcessorEditor::~BitcrusherAudioProcessorEditor()
 //==============================================================================
 void BitcrusherAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-
-    g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello World!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void BitcrusherAudioProcessorEditor::resized()
 {
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
+    int xPos = MARGIN_WIDTH;
+    int yPos = MARGIN_WIDTH;
+
+    const int btnWidth = (getWidth() - (2 * MARGIN_WIDTH)) / N_BITS;
+
+    for (juce::TextButton& btn : m_buttons)
+    {
+        btn.setBounds(xPos, yPos, btnWidth, btnWidth);
+        xPos += btnWidth;
+    }
 }

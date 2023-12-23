@@ -9,6 +9,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <array>
+
 #include "PluginProcessor.h"
 
 //==============================================================================
@@ -25,9 +27,11 @@ public:
     void resized() override;
 
 private:
-    // This reference is provided as a quick way for your editor to
-    // access the processor object that created it.
+    static constexpr int N_BITS = 8;
+
     BitcrusherAudioProcessor& audioProcessor;
+    std::array<juce::TextButton, N_BITS> m_buttons;
+    juce::Label m_bitMaskLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BitcrusherAudioProcessorEditor)
 };
