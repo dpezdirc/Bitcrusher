@@ -1,19 +1,12 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
-#include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "PluginProcessor.h"
 
 const int MARGIN_WIDTH = 20;
 
-//==============================================================================
-BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor (BitcrusherAudioProcessor& p)
-    : AudioProcessorEditor (&p), audioProcessor (p)
+//------------------------------------------------------------------------------
+BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor(BitcrusherAudioProcessor& p) :
+    AudioProcessorEditor(&p),
+    audioProcessor(p)
 {
     setSize (300, 200);
 
@@ -29,16 +22,13 @@ BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor (BitcrusherAudioP
     
 }
 
-BitcrusherAudioProcessorEditor::~BitcrusherAudioProcessorEditor()
+//------------------------------------------------------------------------------
+void BitcrusherAudioProcessorEditor::paint(juce::Graphics& g)
 {
+    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 }
 
-//==============================================================================
-void BitcrusherAudioProcessorEditor::paint (juce::Graphics& g)
-{
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
-}
-
+//------------------------------------------------------------------------------
 void BitcrusherAudioProcessorEditor::resized()
 {
     int xPos = MARGIN_WIDTH;
