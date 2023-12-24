@@ -11,7 +11,8 @@
 
 //------------------------------------------------------------------------------
 class BitcrusherAudioProcessorEditor :
-    public juce::AudioProcessorEditor
+    public juce::AudioProcessorEditor,
+    public juce::ToggleButton::Listener
 {
 public:
     BitcrusherAudioProcessorEditor(BitcrusherAudioProcessor&);
@@ -20,10 +21,15 @@ public:
     void paint(juce::Graphics&) override;
     void resized() override;
 
+    void buttonClicked(juce::Button* button) override;
+
+private:
+    int GetButtonIndex(juce::Button* button);
+
 private:
     static constexpr int N_BITS = 8;
 
-    BitcrusherAudioProcessor& audioProcessor;
+    BitcrusherAudioProcessor& m_processor;
     std::array<juce::TextButton, N_BITS> m_buttons;
     juce::Label m_bitMaskLabel;
 

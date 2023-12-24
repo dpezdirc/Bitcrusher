@@ -7,7 +7,9 @@ BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
     (
         BusesProperties().withInput("Input", juce::AudioChannelSet::stereo(), true)
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)
-    )
+    ),
+    m_uiChanged(false),
+    m_bitMask(0)
 {
 }
 
@@ -66,4 +68,11 @@ juce::AudioProcessorEditor* BitcrusherAudioProcessor::createEditor()
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new BitcrusherAudioProcessor();
+}
+
+//------------------------------------------------------------------------------
+void BitcrusherAudioProcessor::SetBitMask(uint8_t bitMask)
+{
+    m_bitMask = bitMask;
+    m_uiChanged = true;
 }

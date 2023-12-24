@@ -44,6 +44,11 @@ public:
     // custom, non-overridden methods
     //------------------------------------------
 
+    void SetBitMask(uint8_t bitMask);
+
 private:
+    std::atomic<bool> m_uiChanged;
+    uint8_t m_bitMask;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (BitcrusherAudioProcessor)
 };
