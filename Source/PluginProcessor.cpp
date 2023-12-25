@@ -3,6 +3,12 @@
 
 #include <cmath>
 
+const juce::StringArray BitcrusherAudioProcessor::OPERATIONS =
+{
+    "AND",
+    "XOR"
+};
+
 //------------------------------------------------------------------------------
 BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
     AudioProcessor
@@ -12,6 +18,7 @@ BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
     ),
     m_uiChanged(true),
     m_bitMask(0),
+    m_operation(Operation::AND),
     m_params(*this, nullptr, juce::Identifier("BitcrusherParams"),
         {
             std::make_unique<juce::AudioParameterBool>(GetBitParamName(0), "Bit 1 state", true),
@@ -22,6 +29,7 @@ BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
             std::make_unique<juce::AudioParameterBool>(GetBitParamName(5), "Bit 6 state", true),
             std::make_unique<juce::AudioParameterBool>(GetBitParamName(6), "Bit 7 state", true),
             std::make_unique<juce::AudioParameterBool>(GetBitParamName(7), "Bit 8 state", true),
+            std::make_unique<juce::AudioParameterChoice>("operation", "Operation", OPERATIONS, static_cast<int>(m_operation))
         })
 {
 }
@@ -56,7 +64,7 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
 
     if (m_uiChanged)
     {
-        UpdateBitMask();
+        UpdateParams();
         m_uiChanged = false;
     }
 
@@ -114,6 +122,13 @@ void BitcrusherAudioProcessor::OnUIChanged()
 }
 
 //------------------------------------------------------------------------------
+void BitcrusherAudioProcessor::UpdateParams()
+{
+    UpdateBitMask();
+    UpdateOperation();
+}
+
+//------------------------------------------------------------------------------
 void BitcrusherAudioProcessor::UpdateBitMask()
 {
     static constexpr uint8_t BIT_OPERANDS[8] =
@@ -138,6 +153,14 @@ void BitcrusherAudioProcessor::UpdateBitMask()
         if (bitState)
             m_bitMask |= BIT_OPERANDS[iBit];
     }
+}
+
+//------------------------------------------------------------------------------
+void BitcrusherAudioProcessor::UpdateOperation()
+{
+    juce::RangedAudioParameter* pParam = m_params.getParameter("operation");
+    const int selectedIndex = static_cast<juce::AudioParameterChoice*>(pParam)->getIndex();
+    m_operation = static_cast<Operation>(selectedIndex);
 }
 
 //------------------------------------------------------------------------------

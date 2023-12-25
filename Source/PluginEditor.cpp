@@ -10,10 +10,7 @@ BitcrusherEditor::BitcrusherEditor(Processor& processor, juce::AudioProcessorVal
     AudioProcessorEditor(&processor),
     m_processor(processor)
 {
-    setSize (300, 200);
-
-    //m_bitMaskLabel.setText("Bit Mask:", juce::dontSendNotification);
-    //addAndMakeVisible(m_bitMaskLabel);
+    // set up buttons
 
     for (int iBtn = 0; iBtn < Processor::N_BITS; ++iBtn)
     {
@@ -26,6 +23,21 @@ BitcrusherEditor::BitcrusherEditor(Processor& processor, juce::AudioProcessorVal
 
         addAndMakeVisible(m_buttons[iBtn]);
     }
+
+    // set up combo box and label
+
+    for (int i = 0; i < Processor::OPERATIONS.size(); ++i)
+    {
+        m_operationsComboBox.addItem(Processor::OPERATIONS[i], i + 1);
+    }
+    m_operationsComboBox.addListener(this);
+    m_operationsComboBox.attachment.reset(new juce::AudioProcessorValueTreeState::ComboBoxAttachment(apvts, "operation", m_operationsComboBox));
+    addAndMakeVisible(m_operationsComboBox);
+
+    m_operationsLabel.setText("Operation: ", juce::dontSendNotification);
+    m_operationsLabel.attachToComponent(&m_operationsComboBox, true);
+
+    setSize(300, 150);
 }
 
 //------------------------------------------------------------------------------
@@ -35,22 +47,47 @@ void BitcrusherEditor::paint(juce::Graphics& g)
 }
 
 //------------------------------------------------------------------------------
+int GetLabelWidth(juce::Label& label)
+{
+    const int textWidth = label.getFont().getStringWidth(label.getText());
+    const int borderWidth = label.getBorderSize().getLeftAndRight();
+
+    return textWidth + borderWidth;
+}
+
+//------------------------------------------------------------------------------
 void BitcrusherEditor::resized()
 {
     int xPos = MARGIN_WIDTH;
     int yPos = MARGIN_WIDTH;
 
-    const int btnWidth = (getWidth() - (2 * MARGIN_WIDTH)) / Processor::N_BITS;
+    // buttons
 
+    const int btnWidth = (getWidth() - (2 * MARGIN_WIDTH)) / Processor::N_BITS;
+    
     for (juce::TextButton& btn : m_buttons)
     {
         btn.setBounds(xPos, yPos, btnWidth, btnWidth);
         xPos += btnWidth;
     }
+    
+    xPos = MARGIN_WIDTH;
+    yPos = MARGIN_WIDTH * 2 + btnWidth;
+
+    // combo box and label
+
+    const int labelWidth = GetLabelWidth(m_operationsLabel);
+    m_operationsComboBox.setBounds(xPos + labelWidth, yPos, (getWidth() - 2 * MARGIN_WIDTH) * 5 / 8 - labelWidth, 20);
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherEditor::buttonClicked(juce::Button* button)
+void BitcrusherEditor::buttonClicked(juce::Button*)
+{
+    m_processor.OnUIChanged();
+}
+
+//------------------------------------------------------------------------------
+void BitcrusherEditor::comboBoxChanged(juce::ComboBox*)
 {
     m_processor.OnUIChanged();
 }

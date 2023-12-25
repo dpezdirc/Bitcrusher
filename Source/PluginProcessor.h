@@ -10,6 +10,12 @@
 class BitcrusherAudioProcessor :
     public juce::AudioProcessor
 {
+    enum Operation
+    {
+        AND = 0,
+        XOR
+    };
+
 public:
     BitcrusherAudioProcessor();
     ~BitcrusherAudioProcessor() override {};
@@ -50,14 +56,18 @@ public:
     static juce::String GetBitParamName(int iBit);
 
 private:
+    void UpdateParams();
     void UpdateBitMask();
+    void UpdateOperation();
 
 public:
     static constexpr int N_BITS = 8;
+    static const juce::StringArray OPERATIONS;
 
 private:
     std::atomic<bool> m_uiChanged;
     uint8_t m_bitMask;
+    Operation m_operation;
 
     juce::AudioProcessorValueTreeState m_params;
 
