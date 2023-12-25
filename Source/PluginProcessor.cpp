@@ -69,7 +69,6 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 void BitcrusherAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
 }
