@@ -10,8 +10,19 @@ BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
         BusesProperties().withInput("Input", juce::AudioChannelSet::stereo(), true)
                          .withOutput("Output", juce::AudioChannelSet::stereo(), true)
     ),
-    m_uiChanged(false),
-    m_bitMask(0)
+    m_uiChanged(true),
+    m_bitMask(0),
+    m_params(*this, nullptr, juce::Identifier("BitcrusherParams"),
+        {
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(0), "Bit 1 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(1), "Bit 2 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(2), "Bit 3 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(3), "Bit 4 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(4), "Bit 5 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(5), "Bit 6 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(6), "Bit 7 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(7), "Bit 8 state", true),
+        })
 {
 }
 
@@ -42,6 +53,12 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
 
     const int nInputChannels  = getTotalNumInputChannels();
     const int nSamples = buffer.getNumSamples();
+
+    if (m_uiChanged)
+    {
+        UpdateBitMask();
+        m_uiChanged = false;
+    }
 
     static constexpr float multiplier = 255.f;
     static constexpr float divisor = 1.f / multiplier;
@@ -81,7 +98,7 @@ void BitcrusherAudioProcessor::setStateInformation(const void* data, int sizeInB
 //------------------------------------------------------------------------------
 juce::AudioProcessorEditor* BitcrusherAudioProcessor::createEditor()
 {
-    return new BitcrusherAudioProcessorEditor(*this);
+    return new BitcrusherAudioProcessorEditor(*this, m_params);
 }
 
 //------------------------------------------------------------------------------
@@ -91,8 +108,40 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::SetBitMask(uint8_t bitMask)
+void BitcrusherAudioProcessor::OnUIChanged()
 {
-    m_bitMask = bitMask;
     m_uiChanged = true;
+}
+
+//------------------------------------------------------------------------------
+void BitcrusherAudioProcessor::UpdateBitMask()
+{
+    static constexpr uint8_t BIT_OPERANDS[8] =
+    {
+        0x80, // 10000000
+        0x40, // 01000000
+        0x20, // 00100000
+        0x10, // 00010000
+        0x08, // 00001000
+        0x04, // 00000100
+        0x02, // 00000010
+        0x01  // 00000001
+    };
+
+    m_bitMask = 0; // 00000000
+
+    // set the bit mask based on the state of each button
+    for (int iBit = 0; iBit < 8; iBit++)
+    {
+        juce::RangedAudioParameter* pParam = m_params.getParameter(GetBitParamName(iBit));
+        const bool bitState = static_cast<juce::AudioParameterBool*>(pParam)->get();
+        if (bitState)
+            m_bitMask |= BIT_OPERANDS[iBit];
+    }
+}
+
+//------------------------------------------------------------------------------
+juce::String BitcrusherAudioProcessor::GetBitParamName(int iBit)
+{
+    return juce::String("bit") + juce::String(iBit + 1);
 }

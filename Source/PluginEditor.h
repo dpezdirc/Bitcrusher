@@ -14,8 +14,16 @@ class BitcrusherAudioProcessorEditor :
     public juce::AudioProcessorEditor,
     public juce::ToggleButton::Listener
 {
+    using Processor = BitcrusherAudioProcessor;
+
+    struct TextButtonWithAttachment :
+        juce::TextButton
+    {
+        std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> attachment;
+    };
+
 public:
-    BitcrusherAudioProcessorEditor(BitcrusherAudioProcessor&);
+    BitcrusherAudioProcessorEditor(Processor&, juce::AudioProcessorValueTreeState& apvts);
     ~BitcrusherAudioProcessorEditor() override {};
 
     void paint(juce::Graphics&) override;
@@ -24,13 +32,8 @@ public:
     void buttonClicked(juce::Button* button) override;
 
 private:
-    int GetButtonIndex(juce::Button* button);
-
-private:
-    static constexpr int N_BITS = 8;
-
-    BitcrusherAudioProcessor& m_processor;
-    std::array<juce::TextButton, N_BITS> m_buttons;
+    Processor& m_processor;
+    std::array<TextButtonWithAttachment, Processor::N_BITS> m_buttons;
     juce::Label m_bitMaskLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BitcrusherAudioProcessorEditor)
