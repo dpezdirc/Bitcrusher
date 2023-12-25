@@ -98,7 +98,7 @@ void BitcrusherAudioProcessor::setStateInformation(const void* data, int sizeInB
 //------------------------------------------------------------------------------
 juce::AudioProcessorEditor* BitcrusherAudioProcessor::createEditor()
 {
-    return new BitcrusherAudioProcessorEditor(*this, m_params);
+    return new BitcrusherEditor(*this, m_params);
 }
 
 //------------------------------------------------------------------------------

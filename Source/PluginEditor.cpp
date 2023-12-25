@@ -6,9 +6,9 @@
 const int MARGIN_WIDTH = 20;
 
 //------------------------------------------------------------------------------
-BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor(Processor& p, juce::AudioProcessorValueTreeState& apvts) :
-    AudioProcessorEditor(&p),
-    m_processor(p)
+BitcrusherEditor::BitcrusherEditor(Processor& processor, juce::AudioProcessorValueTreeState& apvts) :
+    AudioProcessorEditor(&processor),
+    m_processor(processor)
 {
     setSize (300, 200);
 
@@ -26,17 +26,16 @@ BitcrusherAudioProcessorEditor::BitcrusherAudioProcessorEditor(Processor& p, juc
 
         addAndMakeVisible(m_buttons[iBtn]);
     }
-    
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessorEditor::paint(juce::Graphics& g)
+void BitcrusherEditor::paint(juce::Graphics& g)
 {
     g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessorEditor::resized()
+void BitcrusherEditor::resized()
 {
     int xPos = MARGIN_WIDTH;
     int yPos = MARGIN_WIDTH;
@@ -51,7 +50,7 @@ void BitcrusherAudioProcessorEditor::resized()
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessorEditor::buttonClicked(juce::Button* button)
+void BitcrusherEditor::buttonClicked(juce::Button* button)
 {
     m_processor.OnUIChanged();
 }
