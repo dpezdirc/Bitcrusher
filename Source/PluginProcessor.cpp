@@ -1,6 +1,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include <cmath>
+
 //------------------------------------------------------------------------------
 BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
     AudioProcessor
@@ -29,32 +31,51 @@ bool BitcrusherAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void BitcrusherAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
 {
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
+void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto nInputChannels  = getTotalNumInputChannels();
-    auto nOutputChannels = getTotalNumOutputChannels();
+
+    const int nInputChannels  = getTotalNumInputChannels();
+    const int nSamples = buffer.getNumSamples();
+
+    static constexpr float multiplier = 255.f;
+    static constexpr float divisor = 1.f / multiplier;
 
     for (int iChan = 0; iChan < nInputChannels; ++iChan)
     {
-        auto* channelData = buffer.getWritePointer (iChan);
+        auto* pRead = buffer.getReadPointer(iChan);
+        auto* pWrite = buffer.getWritePointer(iChan);
 
-        // ..do something to the data...
+        for (int n = 0; n < nSamples; ++n)
+        {
+            const float inSample = pRead[n];
+
+            float sign = 1.f;
+            if (inSample < 0.f)
+                sign = -1.f;
+
+            const float inScaled = std::abs(std::round(inSample * multiplier));
+            const uint8_t tmpResult = static_cast<uint8_t>(inScaled) & m_bitMask;
+            const float outSample = static_cast<float>(tmpResult) * sign * divisor;
+
+            pWrite[n] = outSample;
+        }
     }
 }
 
 //------------------------------------------------------------------------------
 void BitcrusherAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void BitcrusherAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void BitcrusherAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
 }
 
