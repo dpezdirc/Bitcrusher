@@ -116,11 +116,20 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
 //------------------------------------------------------------------------------
 void BitcrusherAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
+    juce::ValueTree state = m_params.copyState();
+    std::unique_ptr<juce::XmlElement> xml(state.createXml());
+    copyXmlToBinary(*xml, destData);
 }
 
 //------------------------------------------------------------------------------
 void BitcrusherAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
+    std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
+
+    if (!xmlState.get() || !xmlState->hasTagName(m_params.state.getType()))
+        return;
+
+    m_params.replaceState(juce::ValueTree::fromXml(*xmlState));
 }
 
 //------------------------------------------------------------------------------
