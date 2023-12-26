@@ -1,8 +1,6 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
 
-#include <cassert>
-
 const int MARGIN_WIDTH = 20;
 
 //------------------------------------------------------------------------------
