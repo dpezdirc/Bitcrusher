@@ -2,7 +2,6 @@
 #include "PluginEditor.h"
 
 #include <cmath>
-#include <functional>
 
 const juce::StringArray BitcrusherAudioProcessor::OPERATIONS =
 {
