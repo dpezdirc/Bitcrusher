@@ -22,7 +22,7 @@ public:
     ~BitcrusherAudioProcessor() override {};
 
     bool isBusesLayoutSupported(const BusesLayout& layouts) const override;
-    void prepareToPlay(double sampleRate, int samplesPerBlock) override {};
+    void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     void releaseResources() override {};
 
