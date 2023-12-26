@@ -3,10 +3,6 @@
 
 #include <cmath>
 #include <functional>
-#include <chrono>
-
-// copy of DBG, but works in release config
-#define DBG_RELEASE(textToWrite) JUCE_BLOCK_WITH_FORCED_SEMICOLON (juce::String tempDbgBuf; tempDbgBuf << textToWrite; juce::Logger::outputDebugString (tempDbgBuf);)
 
 const juce::StringArray BitcrusherAudioProcessor::OPERATIONS =
 {
@@ -54,34 +50,14 @@ bool BitcrusherAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts
     return true;
 }
 
-void BitcrusherAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
-{
-    juce::AudioBuffer<float> buffer(2, 480);
-    juce::MidiBuffer midi;
-
-    auto start = std::chrono::system_clock::now();
-
-    const int nIterations = 100000;
-    for (int i = 0; i < nIterations; i++)
-    {
-        processBlock(buffer, midi);
-    }
-
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    double elapsedAvg = (double)elapsed.count() / nIterations;
-
-    DBG_RELEASE("Elapsed time: " << elapsed.count() << " ms over " << nIterations << " iterations (" << elapsedAvg << " ms per iteration)");
-}
-
 //------------------------------------------------------------------------------
-uint8_t BitwiseNand(uint8_t in, uint8_t mask)
+inline uint8_t BitwiseNand(uint8_t in, uint8_t mask)
 {
     return in & ~mask;
 }
 
 //------------------------------------------------------------------------------
-uint8_t BitwiseXor(uint8_t in, uint8_t mask)
+inline uint8_t BitwiseXor(uint8_t in, uint8_t mask)
 {
     // zero the first 3 bits of the mask to avoid excessive noise
     // TODO: gain reduction, then this may not be needed
@@ -91,41 +67,13 @@ uint8_t BitwiseXor(uint8_t in, uint8_t mask)
 }
 
 //------------------------------------------------------------------------------
-std::function<uint8_t(uint8_t, uint8_t)> GetOperationFunc(BitcrusherAudioProcessor::Operation operationType)
+inline float GetSign(float sample)
 {
-    std::function<uint8_t(uint8_t, uint8_t)> func;
+    float sign = 1.f;
+    if (sample < 0.f)
+        sign = -1.f;
 
-    switch (operationType)
-    {
-        case BitcrusherAudioProcessor::Operation::AND:
-        {
-            func = BitwiseNand;
-            break;
-        }
-        case BitcrusherAudioProcessor::Operation::XOR:
-        {
-            func = BitwiseXor;
-            break;
-        }
-    }
-
-    return func;
-}
-
-//------------------------------------------------------------------------------
-auto GetOperationFunc_PlainPtr(BitcrusherAudioProcessor::Operation operationType)
-{
-    switch (operationType)
-    {
-        case BitcrusherAudioProcessor::Operation::AND:
-        {
-            return BitwiseNand;
-        }
-        case BitcrusherAudioProcessor::Operation::XOR:
-        {
-            return BitwiseXor;
-        }
-    }
+    return sign;
 }
 
 //------------------------------------------------------------------------------
@@ -136,10 +84,6 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
         UpdateParams();
         m_uiChanged = false;
     }
-
-    // the operation to perform
-    //std::function<uint8_t(uint8_t, uint8_t)> OperationFunc = GetOperationFunc(m_operation);
-    auto OperationFunc = GetOperationFunc_PlainPtr(m_operation);
 
     const int nInputChannels = getTotalNumInputChannels();
     const int nSamples = buffer.getNumSamples();
@@ -152,20 +96,16 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
         for (int n = 0; n < nSamples; ++n)
         {
             const float inSample = pRead[n];
-
-            float sign = 1.f;
-            if (inSample < 0.f)
-                sign = -1.f;
+            const float sign = GetSign(inSample);
 
             static constexpr float multiplier = 255.f;
             static constexpr float divisor = 1.f / multiplier;
 
             const float inScaled = std::abs(std::round(inSample * multiplier));
-            const uint8_t tmpResult = OperationFunc(static_cast<uint8_t>(inScaled), m_bitMask);
 
-            //const uint8_t tmpResult = m_operation == Operation::AND ?
-            //    BitwiseNand(static_cast<uint8_t>(inScaled), m_bitMask) :
-            //    BitwiseXor(static_cast<uint8_t>(inScaled), m_bitMask);
+            const uint8_t tmpResult = m_operation == Operation::AND ?
+                BitwiseNand(static_cast<uint8_t>(inScaled), m_bitMask) :
+                BitwiseXor(static_cast<uint8_t>(inScaled), m_bitMask);
 
             const float outSample = static_cast<float>(tmpResult) * sign * divisor;
 
