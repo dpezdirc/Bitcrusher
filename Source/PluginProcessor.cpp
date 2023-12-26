@@ -2,6 +2,7 @@
 #include "PluginEditor.h"
 
 #include <cmath>
+#include <functional>
 
 const juce::StringArray BitcrusherAudioProcessor::OPERATIONS =
 {
@@ -21,14 +22,14 @@ BitcrusherAudioProcessor::BitcrusherAudioProcessor() :
     m_operation(Operation::AND),
     m_params(*this, nullptr, juce::Identifier("BitcrusherParams"),
         {
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(0), "Bit 1 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(1), "Bit 2 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(2), "Bit 3 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(3), "Bit 4 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(4), "Bit 5 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(5), "Bit 6 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(6), "Bit 7 state", true),
-            std::make_unique<juce::AudioParameterBool>(GetBitParamName(7), "Bit 8 state", true),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(0), "Bit 1 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(1), "Bit 2 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(2), "Bit 3 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(3), "Bit 4 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(4), "Bit 5 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(5), "Bit 6 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(6), "Bit 7 state", false),
+            std::make_unique<juce::AudioParameterBool>(GetBitParamName(7), "Bit 8 state", false),
             std::make_unique<juce::AudioParameterChoice>("operation", "Operation", OPERATIONS, static_cast<int>(m_operation))
         })
 {
@@ -50,26 +51,57 @@ bool BitcrusherAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts
 }
 
 //------------------------------------------------------------------------------
-void BitcrusherAudioProcessor::prepareToPlay(double sampleRate, int samplesPerBlock)
+uint8_t BitwiseNand(uint8_t in, uint8_t mask)
 {
+    return in & ~mask;
+}
+
+//------------------------------------------------------------------------------
+uint8_t BitwiseXor(uint8_t in, uint8_t mask)
+{
+    // zero the first 3 bits of the mask to avoid excessive noise
+    // TODO: gain reduction, then this may not be needed
+    mask = mask & 31;
+
+    return in ^ mask;
+}
+
+//------------------------------------------------------------------------------
+std::function<uint8_t(uint8_t, uint8_t)> GetOperationFunc(BitcrusherAudioProcessor::Operation operationType)
+{
+    std::function<uint8_t(uint8_t, uint8_t)> func;
+
+    switch (operationType)
+    {
+        case BitcrusherAudioProcessor::Operation::AND:
+        {
+            func = BitwiseNand;
+            break;
+        }
+        case BitcrusherAudioProcessor::Operation::XOR:
+        {
+            func = BitwiseXor;
+            break;
+        }
+    }
+
+    return func;
 }
 
 //------------------------------------------------------------------------------
 void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
-    juce::ScopedNoDenormals noDenormals;
-
-    const int nInputChannels  = getTotalNumInputChannels();
-    const int nSamples = buffer.getNumSamples();
-
     if (m_uiChanged)
     {
         UpdateParams();
         m_uiChanged = false;
     }
 
-    static constexpr float multiplier = 255.f;
-    static constexpr float divisor = 1.f / multiplier;
+    // the operation to perform
+    std::function<uint8_t(uint8_t, uint8_t)> OperationFunc = GetOperationFunc(m_operation);
+
+    const int nInputChannels = getTotalNumInputChannels();
+    const int nSamples = buffer.getNumSamples();
 
     for (int iChan = 0; iChan < nInputChannels; ++iChan)
     {
@@ -84,8 +116,11 @@ void BitcrusherAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, ju
             if (inSample < 0.f)
                 sign = -1.f;
 
+            static constexpr float multiplier = 255.f;
+            static constexpr float divisor = 1.f / multiplier;
+
             const float inScaled = std::abs(std::round(inSample * multiplier));
-            const uint8_t tmpResult = static_cast<uint8_t>(inScaled) & m_bitMask;
+            const uint8_t tmpResult = OperationFunc(static_cast<uint8_t>(inScaled), m_bitMask);
             const float outSample = static_cast<float>(tmpResult) * sign * divisor;
 
             pWrite[n] = outSample;
